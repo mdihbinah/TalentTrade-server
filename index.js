@@ -35,6 +35,10 @@ async function run() {
             res.json(result)
         })
 
+        app.get('/api/users', async(req, res) => {            
+            const result = await userCollection.find().toArray()
+            res.json(result)
+        })
         app.get('/api/freelancers', async(req, res) => {            
             const result = await userCollection.find({role: 'Freelancer'}).toArray()
             res.json(result)
@@ -52,6 +56,19 @@ async function run() {
             const result = await taskCollection.insertOne(body)
             res.json(result)
         })
+
+        app.patch('/api/freelancer/:id', async (req, res) => {
+    const { id } = req.params;
+
+    const result = await userCollection.updateOne(
+        { _id: new ObjectId(id) },
+        {
+            $set: req.body,
+        }
+    );
+
+    res.json(result);
+});
 
 
 
