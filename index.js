@@ -23,52 +23,111 @@ const client = new MongoClient(uri, {
   }
 });
 
+const clientVerify = async (req, res, next) => {
+  const user = req.user;
+  if (user.role !== "client") {
+    return res.status(403).json({ msg: "Forbidden" });
+  }
+  next();
+};
+
+
+
+
 
 async function run() {
   try {
-        const db = client.db('TalentTrade')
-        const taskCollection = db.collection('tasks')
-        const userCollection = db.collection('user')
+    const db = client.db('TalentTrade')
+    const taskCollection = db.collection('tasks')
+    const userCollection = db.collection('user')
+    const paymentCollection = db.collection('payments')
+    const proposalsCollection = db.collection('proposals')
 
-        app.get('/api/tasks', async(req, res) => {
-            const result = await taskCollection.find().toArray()
-            res.json(result)
-        })
+    app.get('/api/tasks', async (req, res) => {
+      const result = await taskCollection.find().toArray()
+      res.json(result)
+    })
+    app.get('/api/my-tasks', async (req, res) => {
+      const {id} = req.body
+      const result = await taskCollection.find({client_id: new ObjectId(id) }).toArray()
+      res.json(result)
+    })
+    app.get('/proposals',clientVerify, async (req, res) => {
+      const result = await proposalsCollection.find().toArray()
+      res.json(result)
+    })
 
-        app.get('/api/users', async(req, res) => {            
-            const result = await userCollection.find().toArray()
-            res.json(result)
-        })
-        app.get('/api/freelancers', async(req, res) => {            
-            const result = await userCollection.find({role: 'Freelancer'}).toArray()
-            res.json(result)
-        })
+    app.get('/api/users', async (req, res) => {
+      const result = await userCollection.find().toArray()
+      res.json(result)
+    })
 
-        app.get('/api/freelancer/:id', async(req, res) => {
-            const {id} = req.params
-            const result = await userCollection.findOne({_id: new ObjectId(id)})
-            res.json(result)
-        })
-        
-        app.post(`/tasks`, async(req, res) => {
-            const body = req.body
-            console.log(body)
-            const result = await taskCollection.insertOne(body)
-            res.json(result)
-        })
+    app.get('/api/payments', async (req, res) => {
+      const result = await paymentCollection.find().toArray()
+      res.json(result)
+    })
+    
+    app.get('/api/freelancers', async (req, res) => {
+      const result = await userCollection.find({ role: 'Freelancer' }).toArray()
+      res.json(result)
+    })
 
-        app.patch('/api/freelancer/:id', async (req, res) => {
-    const { id } = req.params;
+    app.get('/api/freelancer/:id', async (req, res) => {
+      const { id } = req.params
+      const result = await userCollection.findOne({ _id: new ObjectId(id) })
+      res.json(result)
+    })
+    app.get('/api/task/:id', async (req, res) => {
+      const { id } = req.params
+      const result = await taskCollection.findOne({ _id: new ObjectId(id) })
+      res.json(result)
+    })
 
-    const result = await userCollection.updateOne(
+    app.delete('/api/task/:id', async (req, res) => {
+      const { id } = req.params
+      const result = await taskCollection.deleteOne({ _id: new ObjectId(id) })
+      res.json(result)
+    })
+
+    app.post(`/tasks`, async (req, res) => {
+      const body = req.body
+      console.log(body)
+      const result = await taskCollection.insertOne(body)
+      res.json(result)
+    })
+
+    app.post(`/proposals`, async (req, res) => {
+      const body = req.body
+      console.log(body)
+      const result = await proposalsCollection.insertOne(body)
+      res.json(result)
+    })
+
+    app.patch('/api/user/:id', async (req, res) => {
+      const { id } = req.params;
+
+      // console.log(req.body)
+      
+      const result = await userCollection.updateOne(
         { _id: new ObjectId(id) },
         {
-            $set: req.body,
+          $set: {isBlocked: req.body.isBlocked},
         }
-    );
+      );
+      res.json(result);
+    });
 
-    res.json(result);
-});
+    app.patch('/api/freelancer/:id', async (req, res) => {
+      const { id } = req.params;
+
+      const result = await userCollection.updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $set: req.body,
+        }
+      );
+      res.json(result);
+    });
 
 
 
