@@ -84,7 +84,19 @@ async function run() {
       res.json(result)
     })
 
-    
+    app.get("/api/freelancers/top", async (req, res) => {
+      const freelancers = await userCollection
+        .find({
+          role: "Freelancer",
+          isBlocked: false,
+        })
+        .sort({
+          totalFinishedJobs: -1, 
+        })
+        .limit(6)
+        .toArray();
+      res.send(freelancers);
+    });
 
     app.get('/api/freelancer/:id', async (req, res) => {
       const { id } = req.params
