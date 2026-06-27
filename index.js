@@ -48,11 +48,23 @@ async function run() {
       res.json(result)
     })
     app.get('/api/my-tasks', async (req, res) => {
-      const {id} = req.body
-      const result = await taskCollection.find({client_id: new ObjectId(id) }).toArray()
+      const { id } = req.body
+      const result = await taskCollection.find({ client_id: new ObjectId(id) }).toArray()
       res.json(result)
     })
-    app.get('/proposals',clientVerify, async (req, res) => {
+
+    app.get("/api/tasks/latest", async (req, res) => {
+      const latestTasks = await taskCollection
+        .find()
+        .sort({ createdAt: -1 })
+        .limit(6)
+        .toArray();
+
+      res.send(latestTasks);
+    });
+
+
+    app.get('/proposals', clientVerify, async (req, res) => {
       const result = await proposalsCollection.find().toArray()
       res.json(result)
     })
@@ -66,11 +78,13 @@ async function run() {
       const result = await paymentCollection.find().toArray()
       res.json(result)
     })
-    
+
     app.get('/api/freelancers', async (req, res) => {
       const result = await userCollection.find({ role: 'Freelancer' }).toArray()
       res.json(result)
     })
+
+    
 
     app.get('/api/freelancer/:id', async (req, res) => {
       const { id } = req.params
@@ -107,11 +121,11 @@ async function run() {
       const { id } = req.params;
 
       // console.log(req.body)
-      
+
       const result = await userCollection.updateOne(
         { _id: new ObjectId(id) },
         {
-          $set: {isBlocked: req.body.isBlocked},
+          $set: { isBlocked: req.body.isBlocked },
         }
       );
       res.json(result);
