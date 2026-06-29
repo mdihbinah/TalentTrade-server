@@ -43,10 +43,10 @@ async function run() {
     const paymentCollection = db.collection('payments')
     const proposalsCollection = db.collection('proposals')
 
-    app.get('/api/tasks', async (req, res) => {
-      const result = await taskCollection.find().toArray()
-      res.json(result)
-    })
+    // app.get('/api/tasks', async (req, res) => {
+    //   const result = await taskCollection.find().toArray()
+    //   res.json(result)
+    // })
     app.get('/api/my-tasks', async (req, res) => {
       const { id } = req.body
       const result = await taskCollection.find({ client_id: new ObjectId(id) }).toArray()
@@ -91,7 +91,7 @@ async function run() {
           isBlocked: false,
         })
         .sort({
-          totalFinishedJobs: -1, 
+          totalFinishedJobs: -1,
         })
         .limit(6)
         .toArray();
@@ -108,6 +108,38 @@ async function run() {
       const result = await taskCollection.findOne({ _id: new ObjectId(id) })
       res.json(result)
     })
+    app.get('/api/tasks', async (req, res) => {
+      // const { search, type } = req.query;
+      const search = req.query.search || "";
+      const category = req.query.category || "all";
+      console.log(search, category)
+
+      let filter = {};
+
+      if (search) {
+        filter.title = {
+          $regex: search,
+          $options: 'i'
+        };
+      }
+
+      if (category !== "all") {
+      filter.category = {
+        $in: [category],
+      };
+    }
+
+      // if (type) {
+      //   filter.category = {
+      //     $regex: type,
+      //     $options: 'i'
+      //   };
+      // }
+
+      const result = await taskCollection.find(filter).toArray();
+      res.status(200).json(result);
+    });
+
 
     app.delete('/api/task/:id', async (req, res) => {
       const { id } = req.params
