@@ -48,8 +48,10 @@ async function run() {
     //   res.json(result)
     // })
     app.get('/api/my-tasks', async (req, res) => {
-      const { id } = req.body
-      const result = await taskCollection.find({ client_id: new ObjectId(id) }).toArray()
+      const { id } = req.query
+      console.log(id)
+      
+      const result = await taskCollection.find({ client_id: id }).toArray()
       res.json(result)
     })
 
