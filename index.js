@@ -5,6 +5,7 @@ const express = require('express')
 const dotenv = require('dotenv')
 const cors = require('cors')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { createRemoteJWKSet, jwtVerify } = require('jose-cjs')
 
 
 dotenv.config()
@@ -22,6 +23,40 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   }
 });
+
+const JWKS = createRemoteJWKSet(
+  new URL(`${process.env.CLIENT_URL}/api/auth/jwks`)
+)
+
+const verifyToken = async(req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).json({
+      message: 'Unauthorized Access'
+    });
+  }
+  // console.log(authHeader)
+
+  const token = authHeader.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({
+      message: 'Invalid Token'
+    })
+  }
+  // console.log(token)
+  try {
+    const { payload } = await jwtVerify(token, JWKS)
+    console.log(payload)
+    
+  } catch (error) {
+    console.error('Token validation failed:', error)
+    return res.status(403).json({
+   message: 'Forbidden Access'
+})
+  }
+
+  next()
+};
 
 const clientVerify = async (req, res, next) => {
   const user = req.user;
@@ -106,11 +141,12 @@ async function run() {
       const result = await userCollection.findOne({ _id: new ObjectId(id) })
       res.json(result)
     })
-    app.get('/api/task/:id', async (req, res) => {
+    app.get('/api/task/:id', verifyToken, async (req, res) => {
       const { id } = req.params
       const result = await taskCollection.findOne({ _id: new ObjectId(id) })
       res.json(result)
     })
+
     app.get('/api/tasks', async (req, res) => {
       // const { search, type } = req.query;
       const search = req.query.search || "";
