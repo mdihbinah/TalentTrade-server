@@ -66,8 +66,9 @@ async function run() {
     });
 
 
-    app.get('/proposals', clientVerify, async (req, res) => {
-      const result = await proposalsCollection.find().toArray()
+    app.get('/proposals/:id', async (req, res) => {
+      const {id} = req.params
+      const result = await proposalsCollection.find({task_id: id}).toArray()
       res.json(result)
     })
 
@@ -188,6 +189,19 @@ async function run() {
       );
       res.json(result);
     });
+
+    app.patch(`/task/:id`, async (req, res) => {
+          const { id } = req.params
+          const updateData = req.body
+          const result = taskCollection.updateOne(
+            { _id: new ObjectId(id) },
+            {
+              $set: updateData
+            }
+          )
+          // console.log(result)
+          res.json(result)
+        })
 
 
 
