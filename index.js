@@ -61,7 +61,7 @@ const verifyToken = async (req, res, next) => {
 
 const clientVerify = async (req, res, next) => {
   const user = req.user;
-  console.log(user)
+  // console.log(user)
   
   if (user.role !== "client") {
     
@@ -83,10 +83,10 @@ async function run() {
     const paymentCollection = db.collection('payments')
     const proposalsCollection = db.collection('proposals')
 
-    // app.get('/api/tasks', async (req, res) => {
-    //   const result = await taskCollection.find().toArray()
-    //   res.json(result)
-    // })
+    app.get('/tasks', async (req, res) => {
+      const result = await taskCollection.find().toArray()
+      res.json(result)
+    })
     app.get('/api/my-tasks', async (req, res) => {
       const { id } = req.query
       console.log(id)
@@ -152,6 +152,12 @@ async function run() {
       res.json(result)
     })
 
+    app.get('/task/:id', async (req, res) => {
+      const { id } = req.params
+      const result = await taskCollection.findOne({ _id: new ObjectId(id) })
+      res.json(result)
+    })
+
     app.get('/api/tasks', async (req, res) => {
       // const { search, type } = req.query;
       const search = req.query.search || "";
@@ -191,7 +197,7 @@ async function run() {
       res.json(result)
     })
 
-    app.post(`/tasks`, verifyToken, async (req, res) => {
+    app.post(`/tasks`, verifyToken, clientVerify, async (req, res) => {
       const body = req.body
       console.log(body)
       const result = await taskCollection.insertOne(body)
