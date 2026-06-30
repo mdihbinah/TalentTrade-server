@@ -28,7 +28,7 @@ const JWKS = createRemoteJWKSet(
   new URL(`${process.env.CLIENT_URL}/api/auth/jwks`)
 )
 
-const verifyToken = async(req, res, next) => {
+const verifyToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader) {
     return res.status(401).json({
@@ -46,13 +46,14 @@ const verifyToken = async(req, res, next) => {
   // console.log(token)
   try {
     const { payload } = await jwtVerify(token, JWKS)
+    req.user = payload;
     console.log(payload)
-    
+
   } catch (error) {
     console.error('Token validation failed:', error)
     return res.status(403).json({
-   message: 'Forbidden Access'
-})
+      message: 'Forbidden Access'
+    })
   }
 
   next()
@@ -60,9 +61,13 @@ const verifyToken = async(req, res, next) => {
 
 const clientVerify = async (req, res, next) => {
   const user = req.user;
+  console.log(user)
+  
   if (user.role !== "client") {
+    
     return res.status(403).json({ msg: "Forbidden" });
   }
+  console.log('verify client')
   next();
 };
 
@@ -85,7 +90,7 @@ async function run() {
     app.get('/api/my-tasks', async (req, res) => {
       const { id } = req.query
       console.log(id)
-      
+
       const result = await taskCollection.find({ client_id: id }).toArray()
       res.json(result)
     })
@@ -102,8 +107,8 @@ async function run() {
 
 
     app.get('/proposals/:id', async (req, res) => {
-      const {id} = req.params
-      const result = await proposalsCollection.find({task_id: id}).toArray()
+      const { id } = req.params
+      const result = await proposalsCollection.find({ task_id: id }).toArray()
       res.json(result)
     })
 
@@ -141,7 +146,7 @@ async function run() {
       const result = await userCollection.findOne({ _id: new ObjectId(id) })
       res.json(result)
     })
-    app.get('/api/task/:id', verifyToken, async (req, res) => {
+    app.get('/api/task/:id', verifyToken, clientVerify, async (req, res) => {
       const { id } = req.params
       const result = await taskCollection.findOne({ _id: new ObjectId(id) })
       res.json(result)
@@ -163,10 +168,10 @@ async function run() {
       }
 
       if (category !== "all") {
-      filter.category = {
-        $in: [category],
-      };
-    }
+        filter.category = {
+          $in: [category],
+        };
+      }
 
       // if (type) {
       //   filter.category = {
@@ -186,7 +191,7 @@ async function run() {
       res.json(result)
     })
 
-    app.post(`/tasks`, async (req, res) => {
+    app.post(`/tasks`, verifyToken, async (req, res) => {
       const body = req.body
       console.log(body)
       const result = await taskCollection.insertOne(body)
@@ -227,17 +232,17 @@ async function run() {
     });
 
     app.patch(`/task/:id`, async (req, res) => {
-          const { id } = req.params
-          const updateData = req.body
-          const result = taskCollection.updateOne(
-            { _id: new ObjectId(id) },
-            {
-              $set: updateData
-            }
-          )
-          // console.log(result)
-          res.json(result)
-        })
+      const { id } = req.params
+      const updateData = req.body
+      const result = taskCollection.updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $set: updateData
+        }
+      )
+      // console.log(result)
+      res.json(result)
+    })
 
 
 
